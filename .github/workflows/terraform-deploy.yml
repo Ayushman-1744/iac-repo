@@ -1,30 +1,31 @@
 name: Terraform Deploy (E2E)
 
 on:
-  push:
-    branches:
-      - main
-      - dev
-      - staging
   workflow_dispatch:
     inputs:
       env:
-        description: 'Environment (dev | staging | prod)'
-        required: false
-        default: 'dev'
+        description: "Environment to deploy (dev | staging | prod)"
+        required: true
+        default: "dev"
+  push:
+    branches:
+      - dev
+      - staging
+      - main
 
 jobs:
-  terraform:
-    name: Terraform Apply
+  # ===========================
+  # Common setup step (reusable)
+  # ===========================
+  setup:
     runs-on: ubuntu-latest
-    env:
-      TF_VERSION: 1.5.6
-
+    outputs:
+      selected_env: ${{ steps.select_env.outputs.env }}
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -34,10 +35,10 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: ${{ env.TF_VERSION }}
+          terraform_version: 1.5.6
 
-      - name: Select environment
-        id: env
+      - name: Determine Environment
+        id: select_env
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             ENV="${{ github.event.inputs.env }}"
@@ -52,34 +53,110 @@ jobs:
           fi
           echo "env=$ENV" >> $GITHUB_OUTPUT
 
-      - name: Show selected env
-        run: echo "Selected environment = ${{ steps.env.outputs.env }}"
+      - name: Show Selected Environment
+        run: echo "Selected Environment = ${{ steps.select_env.outputs.env }}"
 
-      - name: Terraform Init
+  # ===========================
+  # DEV DEPLOYMENT
+  # ===========================
+  deploy-dev:
+    name: Deploy to DEV
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.selected_env == 'dev'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Terraform Init (Dev)
         working-directory: ./infra
-        run: terraform init -input=false
+        run: terraform init -input=false -reconfigure
 
-      - name: Create/select workspace
+      - name: Select/Create Workspace (Dev)
         working-directory: ./infra
         run: |
           terraform workspace list || true
-          if terraform workspace list | grep -q " ${steps.env.outputs.env}$"; then
-            terraform workspace select ${{ steps.env.outputs.env }}
-          else
-            terraform workspace new ${{ steps.env.outputs.env }}
-          fi
+          terraform workspace select dev || terraform workspace new dev
 
-      - name: Terraform Validate & Format
+      - name: Terraform Validate & Format (Dev)
         working-directory: ./infra
         run: |
           terraform fmt -check || true
           terraform validate
 
-      - name: Terraform Plan
+      - name: Terraform Plan (Dev)
         working-directory: ./infra
-        run: terraform plan -var-file=./envs/${{ steps.env.outputs.env }}.tfvars -input=false -out=tfplan
+        run: terraform plan -var-file=./envs/dev.tfvars -input=false -out=tfplan-dev
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+      - name: Terraform Apply (Dev)
         working-directory: ./infra
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan-dev
+
+  # ===========================
+  # STAGING DEPLOYMENT
+  # ===========================
+  deploy-staging:
+    name: Deploy to STAGING
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.selected_env == 'staging'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Terraform Init (Staging)
+        working-directory: ./infra
+        run: terraform init -input=false -reconfigure
+
+      - name: Select/Create Workspace (Staging)
+        working-directory: ./infra
+        run: |
+          terraform workspace list || true
+          terraform workspace select staging || terraform workspace new staging
+
+      - name: Terraform Validate & Format (Staging)
+        working-directory: ./infra
+        run: |
+          terraform fmt -check || true
+          terraform validate
+
+      - name: Terraform Plan (Staging)
+        working-directory: ./infra
+        run: terraform plan -var-file=./envs/staging.tfvars -input=false -out=tfplan-staging
+
+      - name: Terraform Apply (Staging)
+        working-directory: ./infra
+        run: terraform apply -auto-approve tfplan-staging
+
+  # ===========================
+  # PROD DEPLOYMENT
+  # ===========================
+  deploy-prod:
+    name: Deploy to PROD
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.selected_env == 'prod'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Terraform Init (Prod)
+        working-directory: ./infra
+        run: terraform init -input=false -reconfigure
+
+      - name: Select/Create Workspace (Prod)
+        working-directory: ./infra
+        run: |
+          terraform workspace list || true
+          terraform workspace select prod || terraform workspace new prod
+
+      - name: Terraform Validate & Format (Prod)
+        working-directory: ./infra
+        run: |
+          terraform fmt -check || true
+          terraform validate
+
+      - name: Terraform Plan (Prod)
+        working-directory: ./infra
+        run: terraform plan -var-file=./envs/prod.tfvars -input=false -out=tfplan-prod
+
+      - name: Terraform Apply (Prod)
+        working-directory: ./infra
+        run: terraform apply -auto-approve tfplan-prod
