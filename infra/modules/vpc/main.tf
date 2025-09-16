@@ -4,7 +4,7 @@ data "aws_availability_zones" "available" {}
 resource "aws_vpc" "this" {
   cidr_block = var.vpc_cidr
   tags = {
-    Name = "${var.project_name}-${var.environment}-vpc"
+    Name = "${var.project_name}-${var.env}-vpc"
   }
 }
 
@@ -16,14 +16,14 @@ resource "aws_subnet" "public" {
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
   tags = {
-    Name = "${var.project_name}-${var.environment}-public-${count.index}"
+    Name = "${var.project_name}-${var.env}-public-${count.index}"
   }
 }
 
 # Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "${var.project_name}-${var.environment}-igw" }
+  tags   = { Name = "${var.project_name}-${var.env}-igw" }
 }
 
 # Public Route Table
@@ -33,7 +33,7 @@ resource "aws_route_table" "public" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
   }
-  tags = { Name = "${var.project_name}-${var.environment}-rt" }
+  tags = { Name = "${var.project_name}-${var.env}-rt" }
 }
 
 # Associate public subnets with route table
@@ -45,7 +45,7 @@ resource "aws_route_table_association" "pub_assoc" {
 
 # Security Group for EC2
 resource "aws_security_group" "ec2_sg" {
-  name        = "${var.project_name}-${var.environment}-sg"
+  name        = "${var.project_name}-${var.env}-sg"
   description = "Security group for EC2 instances"
   vpc_id      = aws_vpc.this.id
 
@@ -63,7 +63,7 @@ resource "aws_security_group" "ec2_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = { Name = "${var.project_name}-${var.environment}-sg" }
+  tags = { Name = "${var.project_name}-${var.env}-sg" }
 }
 resource "aws_subnet" "private" {
   count             = length(var.private_subnets)
