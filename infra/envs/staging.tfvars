@@ -1,0 +1,12 @@
+aws_account_id   = "430118813555"
+aws_region       = "ap-south-1"
+project_name     = "demo-project"
+key_name         = "aws-key-pair"
+instance_type    = "t3.micro"
+db_username      = "dbadmin"
+db_password      = "VerySecurePassword123!"
+env              = "staging"
+vpc_cidr         = "10.1.0.0/16"
+public_subnets   = ["10.1.1.0/24", "10.1.2.0/24"]
+private_subnets  = ["10.1.101.0/24", "10.1.102.0/24"]
+allowed_ssh_cidr = "101.0.62.55/32"

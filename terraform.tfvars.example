@@ -1,0 +1,9 @@
+aws_account_id   = "123456789012"
+aws_region       = "ap-south-1"
+project_name     = "demo-project"
+key_name         = "my-ec2-keypair"
+allowed_ssh_cidr = "0.0.0.0/0"  # change to your IP for security
+instance_type    = "t3.micro"
+db_username      = "dbadmin"
+db_password      = "ChangeMe123!"
+env              = "dev"
