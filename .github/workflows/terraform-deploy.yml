@@ -44,9 +44,9 @@ jobs:
       - name: Show Selected Environment
         run: echo "Selected Environment = ${{ steps.select_env.outputs.env }}"
 
-  # ===========================
+  # ==========================
   # Deploy job template
-  # ===========================
+  # ==========================
   deploy:
     needs: setup
     runs-on: ubuntu-latest
