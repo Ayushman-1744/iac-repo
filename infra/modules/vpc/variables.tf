@@ -31,3 +31,8 @@ variable "allowed_ssh_cidr" {
   type        = string
   default     = "0.0.0.0/0"  # replace with your IP for production
 }
+variable "env" {
+  description = "Environment name (dev | staging | prod)"
+  type        = string
+}
+
