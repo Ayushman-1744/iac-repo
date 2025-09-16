@@ -42,21 +42,17 @@ jobs:
           echo "env=$ENV" >> $GITHUB_OUTPUT
 
       - name: Show Selected Environment
-        run: echo "Selected Environment = ${{ steps.select_env.outputs.env }}"
+        run: echo "Selected environment = ${{ steps.select_env.outputs.env }}"
 
-  # ==========================
-  # Deploy job template
-  # ==========================
-  deploy:
+  # ===========================
+  # DEV DEPLOYMENT
+  # ===========================
+  deploy-dev:
     needs: setup
+    if: needs.setup.outputs.selected_env == 'dev'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: [dev, staging, prod]
-    if: matrix.env == needs.setup.outputs.selected_env
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -76,25 +72,10 @@ jobs:
 
       - name: Select/Create Workspace
         working-directory: ./infra
-        run: |
-          WORKSPACE="${{ matrix.env }}"
-          terraform workspace list || true
-          if terraform workspace list | grep -qw "$WORKSPACE"; then
-            terraform workspace select "$WORKSPACE"
-          else
-            terraform workspace new "$WORKSPACE"
-          fi
+        run: terraform workspace select dev || terraform workspace new dev
 
       - name: Terraform Validate & Format
         working-directory: ./infra
         run: |
           terraform fmt -check || true
-          terraform validate
-
-      - name: Terraform Plan
-        working-directory: ./infra
-        run: terraform plan -var-file=./envs/${{ matrix.env }}.tfvars -input=false -out=tfplan-${{ matrix.env }}
-
-      - name: Terraform Apply
-        working-directory: ./infra
-        run: terraform apply -auto-approve tfplan-${{ matrix.env }}
+          terraform vali
