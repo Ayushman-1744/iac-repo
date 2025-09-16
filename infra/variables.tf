@@ -46,10 +46,10 @@ variable "db_password" {
 }
 
 variable "env" {
-  description = "Environment name (workspace)"
+  description = "Environment name (dev | staging | prod)"
   type        = string
-  default     = "dev"
 }
+
 variable "public_subnets" {
   description = "Public subnet CIDRs"
   type        = list(string)
