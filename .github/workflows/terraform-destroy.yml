@@ -11,9 +11,13 @@ on:
 jobs:
   destroy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -21,19 +25,39 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Step 3: Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.0
 
+      # Step 4: Terraform Init
       - name: Terraform Init
         working-directory: ./infra
         run: terraform init -input=false -reconfigure
 
-      - name: Select/Create Workspace
+      # Step 5: Select/Create Workspace
+      - name: Select or Create Workspace
         working-directory: ./infra
         run: terraform workspace select ${{ github.event.inputs.env }} || terraform workspace new ${{ github.event.inputs.env }}
 
-      - name: Terraform Destroy
+      # Step 6: Terraform Plan for Safety
+      - name: Terraform Destroy Plan
         working-directory: ./infra
-        run: terraform destroy -var-file=./envs/${{ github.event.inputs.env }}.tfvars -auto-approve
+        run: terraform plan -destroy -var-file=./envs/${{ github.event.inputs.env }}.tfvars -out=tfplan-destroy
+
+      # Step 7: Terraform Destroy
+      - name: Terraform Destroy Apply
+        working-directory: ./infra
+        run: terraform apply -auto-approve tfplan-destroy
+
+      # Step 8: Cleanup orphaned RDS Subnet Groups (extra safeguard)
+      - name: Cleanup Orphaned DB Subnet Groups
+        run: |
+          echo "Checking for orphaned DB subnet groups..."
+          aws rds describe-db-subnet-groups --query "DBSubnetGroups[*].{Name:DBSubnetGroupName}" --output text | while read subnet_group; do
+            if [[ "$subnet_group" != "default" ]]; then
+              echo "Deleting subnet group: $subnet_group"
+              aws rds delete-db-subnet-group --db-subnet-group-name "$subnet_group"
+            fi
+          done
