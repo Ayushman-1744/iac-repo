@@ -1,0 +1,39 @@
+name: Terraform Destroy (E2E)
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment to destroy (dev | staging | prod)"
+        required: true
+        default: "dev"
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        working-directory: ./infra
+        run: terraform init -input=false -reconfigure
+
+      - name: Select/Create Workspace
+        working-directory: ./infra
+        run: terraform workspace select ${{ github.event.inputs.env }} || terraform workspace new ${{ github.event.inputs.env }}
+
+      - name: Terraform Destroy
+        working-directory: ./infra
+        run: terraform destroy -var-file=./envs/${{ github.event.inputs.env }}.tfvars -auto-approve

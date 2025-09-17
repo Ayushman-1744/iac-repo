@@ -1,46 +1,41 @@
-locals {
+provider "aws" {
+  region = var.aws_region
+}
+
+# VPC module
+module "vpc" {
+  source       = "./modules/vpc"
   project_name = var.project_name
   env          = var.env
+  vpc_cidr     = var.vpc_cidr
+  public_subnet_cidrs  = var.public_subnet_cidrs
+  private_subnet_cidrs = var.private_subnet_cidrs
+  allowed_ssh_cidr     = var.allowed_ssh_cidr
 }
 
-###########################
-# VPC Module
-###########################
-module "vpc" {
-  source          = "./modules/vpc"
-  project_name    = local.project_name
-  env             = var.env
-  vpc_cidr        = var.vpc_cidr
-  public_subnets  = var.public_subnets
-  private_subnets = var.private_subnets
-  allowed_ssh_cidr = var.allowed_ssh_cidr
-}
-
-###########################
-# EC2 Module
-###########################
+# EC2 module
 module "ec2" {
-  source          = "./modules/ec2"
-  project_name    = local.project_name
-  env             = local.env
-  vpc_id          = module.vpc.vpc_id
-  public_subnets  = module.vpc.public_subnets
-  key_name        = var.key_name
-  allowed_ssh_cidr = var.allowed_ssh_cidr
-  instance_type   = var.instance_type
+  source       = "./modules/ec2"
+  project_name = var.project_name
+  env          = var.env
+  vpc_id       = module.vpc.vpc_id
+  public_subnet_ids = module.vpc.public_subnet_ids
+  instance_type     = var.instance_type
+  key_name          = var.key_name
+  allowed_ssh_cidr  = var.allowed_ssh_cidr
 }
 
-###########################
-# RDS Module
-###########################
+# DB module
 module "db" {
-  source          = "./modules/db"
-  project_name    = local.project_name
-  env             = local.env
-  vpc_id          = module.vpc.vpc_id
-  public_subnets  = module.vpc.public_subnets
-  private_subnets = module.vpc.private_subnets # if no private subnets
-  db_username     = var.db_username
-  db_password     = var.db_password
-  ec2_sg_id       = module.vpc.ec2_sg_id   # use SG created in VPC module
+  source = "./modules/db"
+
+  project_name        = var.project_name
+  env                 = var.env
+  vpc_id              = module.vpc.vpc_id
+  db_username         = var.db_username
+  db_password         = var.db_password
+
+  private_subnet_cidrs = var.private_subnet_cidrs
+  public_subnet_cidrs  = var.public_subnet_cidrs
+  allowed_ssh_cidr     = var.allowed_ssh_cidr
 }

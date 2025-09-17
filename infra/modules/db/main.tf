@@ -1,6 +1,4 @@
-########################################
 # Map CIDRs to subnet IDs
-########################################
 data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
@@ -25,9 +23,7 @@ data "aws_subnets" "public" {
   }
 }
 
-########################################
 # EC2 Security Group
-########################################
 resource "aws_security_group" "ec2_sg" {
   name        = "${var.project_name}-${var.env}-ec2-sg"
   description = "Allow SSH and app traffic"
@@ -52,9 +48,7 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
-########################################
 # DB Security Group
-########################################
 resource "aws_security_group" "db_sg" {
   name        = "${var.project_name}-${var.env}-db-sg"
   description = "Allow DB access from EC2"
@@ -79,9 +73,7 @@ resource "aws_security_group" "db_sg" {
   }
 }
 
-########################################
 # DB Subnet Group
-########################################
 resource "aws_db_subnet_group" "default" {
   name       = "${var.project_name}-${var.env}-db-subnet-group"
   subnet_ids = length(data.aws_subnets.private.ids) > 0 ? data.aws_subnets.private.ids : data.aws_subnets.public.ids
@@ -91,14 +83,12 @@ resource "aws_db_subnet_group" "default" {
   }
 }
 
-########################################
 # RDS Instance
-########################################
 resource "aws_db_instance" "postgres" {
   identifier              = "${var.project_name}-${var.env}-db"
   allocated_storage       = 20
   engine                  = "postgres"
-  engine_version          = "15.3"   # specify version
+  engine_version          = "15.3"
   instance_class          = "db.t3.micro"
   db_name                 = var.db_username
   username                = var.db_username

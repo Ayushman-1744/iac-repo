@@ -1,16 +1,11 @@
-aws_account_id   = "430118813555"
 aws_region       = "ap-south-1"
 project_name     = "demo-project"
-key_name         = "aws-key-pair"
-instance_type    = "t3.micro"
-db_username      = "dbadmin"
-db_password      = "VerySecurePassword123!"
 env              = "dev"
-vpc_cidr        = "10.0.0.0/16"
-
-# CIDRs instead of subnet IDs
-public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
-private_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24"]
-
-allowed_ssh_cidr = "101.0.62.55/32"
-vpc_id           = "vpc-0523556a9516d6655"
+vpc_cidr         = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24","10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.101.0/24","10.0.102.0/24"]
+allowed_ssh_cidr     = "101.0.62.55/32"
+key_name          = "aws-key-pair"
+instance_type     = "t3.micro"
+db_username       = "dbadmin"
+db_password       = "VerySecurePassword123!"
