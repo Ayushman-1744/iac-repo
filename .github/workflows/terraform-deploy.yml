@@ -14,19 +14,16 @@ on:
       - main
 
 jobs:
-  # ===========================
-  # Setup environment
-  # ===========================
-  setup:
+  deploy:
     runs-on: ubuntu-latest
-    outputs:
-      selected_env: ${{ steps.select_env.outputs.env }}
+    env:
+      TERRAFORM_VERSION: 1.6.0
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Determine Environment
-        id: select_env
+      - name: Set Environment
+        id: set_env
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             ENV="${{ github.event.inputs.env }}"
@@ -42,17 +39,7 @@ jobs:
           echo "env=$ENV" >> $GITHUB_OUTPUT
 
       - name: Show Selected Environment
-        run: echo "Selected environment = ${{ steps.select_env.outputs.env }}"
-
-  # ===========================
-  # DEV DEPLOYMENT
-  # ===========================
-  deploy-dev:
-    needs: setup
-    if: needs.setup.outputs.selected_env == 'dev'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+        run: echo "Selected environment = ${{ steps.set_env.outputs.env }}"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -64,7 +51,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.0
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
       - name: Terraform Init
         working-directory: ./infra
@@ -72,7 +59,7 @@ jobs:
 
       - name: Select/Create Workspace
         working-directory: ./infra
-        run: terraform workspace select dev || terraform workspace new dev
+        run: terraform workspace select ${{ steps.set_env.outputs.env }} || terraform workspace new ${{ steps.set_env.outputs.env }}
 
       - name: Terraform Validate & Format
         working-directory: ./infra
@@ -82,96 +69,8 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ./infra
-        run: terraform plan -var-file=./envs/dev.tfvars -input=false -out=tfplan-dev
+        run: terraform plan -var-file=./envs/${{ steps.set_env.outputs.env }}.tfvars -input=false -out=tfplan-${{ steps.set_env.outputs.env }}
 
       - name: Terraform Apply
         working-directory: ./infra
-        run: terraform apply -auto-approve tfplan-dev
-
-  # ===========================
-  # STAGING DEPLOYMENT
-  # ===========================
-  deploy-staging:
-    needs: setup
-    if: needs.setup.outputs.selected_env == 'staging'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.0
-
-      - name: Terraform Init
-        working-directory: ./infra
-        run: terraform init -input=false -reconfigure
-
-      - name: Select/Create Workspace
-        working-directory: ./infra
-        run: terraform workspace select staging || terraform workspace new staging
-
-      - name: Terraform Validate & Format
-        working-directory: ./infra
-        run: |
-          terraform fmt -check || true
-          terraform validate
-
-      - name: Terraform Plan
-        working-directory: ./infra
-        run: terraform plan -var-file=./envs/staging.tfvars -input=false -out=tfplan-staging
-
-      - name: Terraform Apply
-        working-directory: ./infra
-        run: terraform apply -auto-approve tfplan-staging
-
-  # ===========================
-  # PROD DEPLOYMENT
-  # ===========================
-  deploy-prod:
-    needs: setup
-    if: needs.setup.outputs.selected_env == 'prod'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.0
-
-      - name: Terraform Init
-        working-directory: ./infra
-        run: terraform init -input=false -reconfigure
-
-      - name: Select/Create Workspace
-        working-directory: ./infra
-        run: terraform workspace select prod || terraform workspace new prod
-
-      - name: Terraform Validate & Format
-        working-directory: ./infra
-        run: |
-          terraform fmt -check || true
-          terraform validate
-
-      - name: Terraform Plan
-        working-directory: ./infra
-        run: terraform plan -var-file=./envs/prod.tfvars -input=false -out=tfplan-prod
-
-      - name: Terraform Apply
-        working-directory: ./infra
-        run: terraform apply -auto-approve tfplan-prod
+        run: terraform apply -auto-approve tfplan-${{ steps.set_env.outputs.env }}
