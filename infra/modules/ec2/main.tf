@@ -1,3 +1,4 @@
+# EC2 Security Group
 resource "aws_security_group" "ec2_sg" {
   name        = "${var.project_name}-${var.env}-ec2-sg"
   description = "Allow SSH"
@@ -20,6 +21,7 @@ resource "aws_security_group" "ec2_sg" {
   tags = { Name = "${var.project_name}-${var.env}-ec2-sg" }
 }
 
+# EC2 Instances
 resource "aws_instance" "this" {
   count         = length(var.public_subnet_ids)
   ami           = data.aws_ami.ubuntu.id
@@ -27,9 +29,11 @@ resource "aws_instance" "this" {
   key_name      = var.key_name
   subnet_id     = element(var.public_subnet_ids, count.index)
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
   tags = { Name = "${var.project_name}-${var.env}-ec2-${count.index}" }
 }
 
+# Ubuntu AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"]
@@ -38,4 +42,3 @@ data "aws_ami" "ubuntu" {
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
 }
-
