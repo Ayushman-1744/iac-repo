@@ -7,6 +7,10 @@ db_username      = "dbadmin"
 db_password      = "VerySecurePassword123!"
 env              = "dev"
 vpc_cidr        = "10.0.0.0/16"
-public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
-private_subnets = ["10.0.101.0/24", "10.0.102.0/24"]
+
+# CIDRs instead of subnet IDs
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24"]
+
 allowed_ssh_cidr = "101.0.62.55/32"
+vpc_id           = "vpc-0523556a9516d6655"
