@@ -1,11 +1,9 @@
-output "public_ips" {
-  value = aws_instance.this[*].public_ip
+# Output the EC2 instance ID
+output "instance_id" {
+  value = aws_instance.this.id
 }
 
-output "instance_ids" {
-  value = aws_instance.this[*].id
-}
-
+# Output the EC2 security group ID (passed from VPC module)
 output "ec2_sg_id" {
-  value = aws_security_group.ec2_sg.id
+  value = var.ec2_sg_id
 }

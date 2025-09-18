@@ -16,7 +16,7 @@ module "ec2" {
   public_subnet_ids = module.vpc.public_subnet_ids
   instance_type    = var.instance_type
   key_name         = var.key_name
-  allowed_ssh_cidr = var.allowed_ssh_cidr
+  ec2_sg_id        = module.vpc.ec2_sg_id
 }
 
 module "db" {
@@ -27,12 +27,6 @@ module "db" {
   vpc_id             = module.vpc.vpc_id
   db_username        = var.db_username
   db_password        = var.db_password
-
-  # Use subnet IDs from VPC module outputs
   private_subnet_ids = module.vpc.private_subnet_ids
-  public_subnet_ids  = module.vpc.public_subnet_ids
-
-  # EC2 SG from EC2 module output
-  ec2_sg_id          = module.ec2.ec2_sg_id
+  ec2_sg_id          = module.vpc.ec2_sg_id
 }
-
