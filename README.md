@@ -10,8 +10,11 @@
    GitHub Actions — integrates with your GitHub repository to run Terraform in CI/CD, automate plan on PRs and apply on protected branches with secrets. Easy to set up and doesn't require additional infrastructure.
 
    S3 + DynamoDB — used for Terraform remote state storage and state locking to prevent accidental concurrent changes, lock stays may need manual deletion.
-
-3. Ensure GitHub secrets are set:(done) as link is public
+   
+   IAM-permission to work apart from Root user for safe access and work environment and follow principle of least privilege.
+   IAM credentials for login ---terraform-user(admin access for greater issue resolving by using cloudwatch logs)
+                             ---Admin@123
+4. Ensure GitHub secrets are set:(done) as link is public
 
     -AWS_ACCESS_KEY_ID
 
